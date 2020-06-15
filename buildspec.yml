@@ -1,0 +1,48 @@
+---
+version: 0.2
+
+env:
+  variables:
+     AQUA_URL: "http://ad8e4e3e57f2e11ea8130029a61ca2bf-1298012884.us-east-1.elb.amazonaws.com:8080/"
+     AQUA_USER: "administrator"
+  parameter-store:
+      AQUA_PASSWORD: "/CodeBuild/aquaconsole-password"
+      
+phases:
+  install:
+    commands:
+      - curl -sS -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
+      - curl -sS -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl ./aws-iam-authenticator
+      - export PATH=$PWD/:$PATH
+      - apt-get update && apt-get -y install jq python3-pip python3-dev && pip3 install --upgrade awscli
+      - wget https://community-aqua-reports.s3.amazonaws.com/scannercli
+      - chmod +x scannercli
+  pre_build:
+      commands:
+        - TAG="$REPOSITORY_NAME.$REPOSITORY_BRANCH.$ENVIRONMENT_NAME.$(date +%Y-%m-%d.%H.%M.%S).$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+        - sed -i 's@CONTAINER_IMAGE@'"$REPOSITORY_URI:$TAG"'@' devsecops.yml
+        - $(aws ecr get-login --no-include-email)
+        - export KUBECONFIG=$HOME/.kube/config
+  build:
+    commands:
+      - docker build --tag $REPOSITORY_URI:$TAG .
+      - curl -u $AQUA_USER:$AQUA_PASSWORD -X POST $AQUA_URL/api/v1/scanner/registry/local/image/$REPOSITORY_URI:$TAG/scan
+#      - ./scannercli scan --host $AQUA_URL --user $AQUA_USER --password $AQUA_PASSWORD --local $REPOSITORY_URI:$TAG --no-verify --htmlfile out.html
+#      - docker push "$IMAGE_URI"
+      - docker push $REPOSITORY_URI:$TAG
+  post_build:
+    commands:
+      - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+      - kubectl apply -f devsecops.yml
+      - printf '[{"name":"devsecops","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build-devsecops.json
+artifacts:
+  files: 
+    - build-devsecops.json
+    - out.html
+  name: build-devsecops-${CODEBUILD_BUILD_NUMBER}
