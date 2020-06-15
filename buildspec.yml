@@ -27,9 +27,8 @@ phases:
   build:
     commands:
       - docker build --tag $REPOSITORY_URI:$TAG .
-      - curl -u $AQUA_USER:$AQUA_PASSWORD -X POST $AQUA_URL/api/v1/scanner/registry/local/image/$REPOSITORY_URI:$TAG/scan
-#      - ./scannercli scan --host $AQUA_URL --user $AQUA_USER --password $AQUA_PASSWORD --local $REPOSITORY_URI:$TAG --no-verify --htmlfile out.html
-#      - docker push "$IMAGE_URI"
+      - ./scannercli scan --host $AQUA_URL --user $AQUA_USER --password $AQUA_PASSWORD --local $REPOSITORY_URI:$TAG --no-verify --htmlfile aqua.html
+      - docker push "$IMAGE_URI"
       - docker push $REPOSITORY_URI:$TAG
   post_build:
     commands:
@@ -44,5 +43,5 @@ phases:
 artifacts:
   files: 
     - build-devsecops.json
-    - out.html
+    - aqua.html
   name: build-devsecops-${CODEBUILD_BUILD_NUMBER}
