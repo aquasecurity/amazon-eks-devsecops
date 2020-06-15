@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: EKSWSV1
+Description: Amazon EKS and CodePipeline integration
 
 
 Parameters:
@@ -9,7 +9,7 @@ Parameters:
   EksClusterName:
     Type: String
     Description: The name of the EKS cluster created
-    Default: Workload-cluster
+    Default: workload-cluster
     MinLength: 1
     MaxLength: 100
     ConstraintDescription: You must enter the EKS cluster name
@@ -18,7 +18,7 @@ Parameters:
   GitSourceRepo:
     Type: String
     Description: GitHub source repository - must contain a Dockerfile and buildspec.yml in the base
-    Default: AWS_CodePipeline_Aqua
+    Default: amazon-eks-devsecops
     MinLength: 1
     MaxLength: 100
     ConstraintDescription: You must enter a GitHub repository name
