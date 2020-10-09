@@ -19,7 +19,7 @@ phases:
   build:
     commands:
       - docker build --tag $REPOSITORY_URI:$TAG .
-      - ./scannercli scan --host=http://ad316ec74d53140659b87546a57d3bab-153125663.us-east-1.elb.amazonaws.com:8080/ --user=administrator --password=Password1 --local $REPOSITORY_URI:$TAG --htmlfile aqua.html
+      - ./scannercli scan --host=$AQUA_URL --user=$AQUA_USER --password=Password1 --local $REPOSITORY_URI:$TAG --htmlfile aqua.html
       - docker push $REPOSITORY_URI:$TAG
   post_build:
     commands:
