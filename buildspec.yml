@@ -21,6 +21,7 @@ phases:
       - docker build --tag $REPOSITORY_URI:$TAG .
       - docker push $REPOSITORY_URI:$TAG
       - docker run --rm -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock 250256720782.dkr.ecr.us-east-1.amazonaws.com/scanner:5.3 scan --registry "Codepipeline-ECR" $ECR_REPO:$TAG --host $AQUA_URL --user $AQUA_USER --password $AQUA_PASSWORD --show-negligible --htmlfile aqua.html --jsonfile aqua.json > /dev/null
+      - cp /tmp/aqua.html /tmp/aqua.json .
   post_build:
     commands:
       - printf '[{"name":"devsecops","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build-devsecops.json
