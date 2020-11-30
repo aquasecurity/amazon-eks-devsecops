@@ -12,15 +12,15 @@ phases:
       - chmod +x scannercli
   pre_build:
       commands:
-        - TAG="$REPOSITORY_NAME.$REPOSITORY_BRANCH.$(date +%Y-%m-%d.%H.%M.%S).$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+        - TAG="$REPOSITORY_NAME.$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
         - sed -i 's@CONTAINER_IMAGE@'"$REPOSITORY_URI:$TAG"'@' devsecops.yml
         - $(aws ecr get-login --no-include-email)
         - export KUBECONFIG=$HOME/.kube/config
   build:
     commands:
       - docker build --tag $REPOSITORY_URI:$TAG .
-      - ./scannercli scan --host=$AQUA_URL --user=$AQUA_USER --password=$AQUA_PASSWORD --local $REPOSITORY_URI:$TAG --no-verify --htmlfile aqua.html
       - docker push $REPOSITORY_URI:$TAG
+      - ./scannercli scan --host=$AQUA_URL --user=$AQUA_USER --password=$AQUA_PASSWORD --register-compliant --registry Codepipeline-ECR $ECR_REPO:$TAG --no-verify --htmlfile aqua.html
   post_build:
     commands:
       - printf '[{"name":"devsecops","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build-devsecops.json
