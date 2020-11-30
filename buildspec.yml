@@ -20,7 +20,7 @@ phases:
     commands:
       - docker build --tag $REPOSITORY_URI:$TAG .
       - docker push $REPOSITORY_URI:$TAG
-      - ./scannercli scan --host=$AQUA_URL --user=$AQUA_USER --password=$AQUA_PASSWORD $ECR_REPO:$TAG --registry=Codepipeline-ECR --register-compliant --no-verify --htmlfile aqua.html
+      - ./scannercli scan --host=$AQUA_URL --user=$AQUA_USER --password=$AQUA_PASSWORD $ECR_REPO:$TAG --registry=Codepipeline-ECR --register --no-verify --htmlfile aqua.html
   post_build:
     commands:
       - printf '[{"name":"devsecops","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build-devsecops.json
