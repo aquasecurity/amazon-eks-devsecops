@@ -24,6 +24,7 @@ phases:
       - cp /tmp/aqua.html /tmp/aqua.json .
   post_build:
     commands:
+      - cp /tmp/aqua.html /tmp/aqua.json .
       - printf '[{"name":"devsecops","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build-devsecops.json
 artifacts:
   files: 
