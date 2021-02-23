@@ -1,0 +1,37 @@
+---
+version: 0.2
+phases:
+  install:
+    commands:
+      - curl -sS -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
+      - curl -sS -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl ./aws-iam-authenticator
+      - export PATH=$PWD/:$PATH
+      - apt-get update && apt-get -y install jq python3-pip python3-dev && pip3 install --upgrade awscli
+      - pip3 install typing
+      - pip list
+      - pip install awscli --force-reinstall --upgrade
+      - pip list
+      - wget --quiet https://aqua-security-public.s3.amazonaws.com/scannercli
+      - chmod +x scannercli
+  pre_build:
+      commands:
+        - TAG="$REPOSITORY_NAME.$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+        - sed -i 's@CONTAINER_IMAGE@'"$REPOSITORY_URI:$TAG"'@' devsecops.yml
+        - $(aws ecr get-login --no-include-email)
+        - export KUBECONFIG=$HOME/.kube/config
+  build:
+    commands:
+      - docker build --tag $REPOSITORY_URI:$TAG .
+      - docker push $REPOSITORY_URI:$TAG
+      - docker run --rm -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock 250256720782.dkr.ecr.us-east-1.amazonaws.com/scanner:5.3 scan --registry "Codepipeline-ECR" $ECR_REPO:$TAG --register --host $AQUA_URL --user $AQUA_USER --password $AQUA_PASSWORD --no-verify --htmlfile /tmp/aqua.html 
+    finally:
+      - cp /tmp/aqua.html .
+  post_build:
+    commands:
+      - printf '[{"name":"devsecops","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build-devsecops.json
+artifacts:
+  files: 
+    - build-devsecops.json
+    - aqua.html
+  name: build-devsecops-${CODEBUILD_BUILD_NUMBER}
