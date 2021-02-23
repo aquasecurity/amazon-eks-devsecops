@@ -10,6 +10,8 @@ phases:
       - apt-get update && apt-get -y install jq python3-pip python3-dev && pip3 install --upgrade awscli
       - pip3 install typing
       - pip list
+      - pip install awscli --force-reinstall --upgrade
+      - pip list
       - wget --quiet https://aqua-security-public.s3.amazonaws.com/scannercli
       - chmod +x scannercli
   pre_build:
