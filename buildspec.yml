@@ -8,7 +8,7 @@ phases:
       - chmod +x ./kubectl ./aws-iam-authenticator
       - export PATH=$PWD/:$PATH
       - apt-get update && apt-get -y install jq python3-pip python3-dev && pip3 install --upgrade awscli
-      - python3 -m pip install systemrdl-compiler
+      - pip3 install awscli --force-reinstall --upgrade
       - wget https://aqua-security-public.s3.amazonaws.com/scannercli
       - chmod +x scannercli
   pre_build:
