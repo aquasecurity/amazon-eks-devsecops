@@ -8,7 +8,9 @@ phases:
       - chmod +x ./kubectl ./aws-iam-authenticator
       - export PATH=$PWD/:$PATH
       - apt-get update && apt-get -y install jq python3-pip python3-dev && pip3 install --upgrade awscli
-      - wget https://community-aqua-reports.s3.amazonaws.com/scannercli
+      - pip3 install typing
+      - pip install awscli --force-reinstall --upgrade
+      - wget --quiet https://community-aqua-reports.s3.amazonaws.com/scannercli
       - chmod +x scannercli
   pre_build:
       commands:
