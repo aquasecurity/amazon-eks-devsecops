@@ -12,7 +12,7 @@ phases:
       - pip list
       - pip3 install awscli --force-reinstall --upgrade
       - pip list
-      - wget --quiet https://aqua-security-public.s3.amazonaws.com/scannercli
+      - wget --quiet https://aqua-binary.s3.amazonaws.com/scannercli
       - chmod +x scannercli
   pre_build:
       commands:
