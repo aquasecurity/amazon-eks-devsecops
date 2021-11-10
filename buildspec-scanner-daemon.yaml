@@ -9,9 +9,10 @@ phases:
       - export PATH=$PWD/:$PATH
       - apt-get update && apt-get -y install jq python3-pip python3-dev && pip3 install --upgrade awscli
       - pip3 install typing
-      - pip3 install awscli --force-reinstall --upgrade
       - pip list
-      - wget --quiet https://aqua-binary.s3.amazonaws.com/scannercli
+      - pip install awscli --force-reinstall --upgrade
+      - pip list
+      - wget --quiet https://aqua-security-public.s3.amazonaws.com/scannercli
       - chmod +x scannercli
   pre_build:
       commands:
@@ -22,17 +23,12 @@ phases:
   build:
     commands:
       - docker build --tag $REPOSITORY_URI:$TAG .
-      - ./scannercli scan --host $AQUA_URL --user $AQUA_USER --password $AQUA_PASSWORD --local $REPOSITORY_URI:$TAG --no-verify --htmlfile aqua.html
-      - docker push $REPOSITORY_URI:$TAG 
+      - docker push $REPOSITORY_URI:$TAG
+      - docker run --rm -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock 250256720782.dkr.ecr.us-east-1.amazonaws.com/scanner:5.3 scan --registry "Codepipeline-ECR" $ECR_REPO:$TAG --register --host $AQUA_URL --user $AQUA_USER --password $AQUA_PASSWORD --no-verify --htmlfile /tmp/aqua.html 
+    finally:
+      - cp /tmp/aqua.html .
   post_build:
     commands:
-      - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
-      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
-      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
-      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
-      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
-      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
-      - kubectl apply -f devsecops.yml
       - printf '[{"name":"devsecops","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build-devsecops.json
 artifacts:
   files: 
